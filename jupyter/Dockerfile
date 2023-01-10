@@ -1,6 +1,7 @@
 # FROM rockylinux:8
 FROM nvidia/cuda:11.7.0-devel-rockylinux8
 
+# Image information
 LABEL org.opencontainers.image.source="https://github.com/TorecLuik/slurm-docker-cluster" \
       org.opencontainers.image.title="slurm-docker-cluster" \
       org.opencontainers.image.description="Slurm Docker cluster on cuda" \
@@ -10,6 +11,7 @@ LABEL org.opencontainers.image.source="https://github.com/TorecLuik/slurm-docker
 ARG SLURM_TAG=slurm-21-08-6-1
 ARG GOSU_VERSION=1.11
 
+# Install basic packages (e.g. Python, MUNGE)
 RUN set -ex \
     && yum makecache \
     && yum -y update \
@@ -26,9 +28,9 @@ RUN set -ex \
        make \
        munge \
        munge-devel \
-       python3-devel \
+    #    python3.9-dev \
        python3-pip \
-       python3 \
+       python3.9 \
        mariadb-server \
        mariadb-devel \
        psmisc \
@@ -37,10 +39,13 @@ RUN set -ex \
     && yum clean all \
     && rm -rf /var/cache/yum
 
-RUN alternatives --set python /usr/bin/python3
+# Set python version
+RUN alternatives --set python /usr/bin/python3.9
 
+# Install 
 RUN pip3 install Cython nose
 
+# Install GOSU 
 RUN set -ex \
     && wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-amd64" \
     && wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-amd64.asc" \
@@ -92,6 +97,7 @@ RUN git clone --depth 1 --single-branch -b json-c-0.15-20200726 https://github.c
 ## Perhaps even install slurm-web?
 # http://edf-hpc.github.io/slurm-web/installation.html
 
+## Install SLURM with plugins
 RUN set -x \
     && git clone -b ${SLURM_TAG} --single-branch --depth=1 https://github.com/SchedMD/slurm.git \
     && pushd slurm \
@@ -129,45 +135,34 @@ RUN set -x \
     && chown -R slurm:slurm /var/*/slurm* \
     && /sbin/create-munge-key
 
-## Install Singularity (containers)
-# Install dependencies
-# RUN yum update -y && \
-#      yum groupinstall -y 'Development Tools' && \
-#      yum install -y \
-#      openssl-devel \
-#      libuuid-devel \
-#      libseccomp-devel \
-#      wget \
-#      squashfs-tools \
-#      cryptsetup
-# Install GO
-# RUN export VERSION=1.13.5 OS=linux ARCH=amd64 && \
-#     wget https://dl.google.com/go/go$VERSION.$OS-$ARCH.tar.gz && \
-#     sudo tar -C /usr/local -xzvf go$VERSION.$OS-$ARCH.tar.gz && \
-#     rm go$VERSION.$OS-$ARCH.tar.gz
-# RUN echo 'export GOPATH=${HOME}/go' >> ~/.bashrc && \
-#     echo 'export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin' >> ~/.bashrc && \
-#     source ~/.bashrc
-# # Install Singularity
-# RUN export VERSION=3.5.3 && \
-#     wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
-#     tar -xzf singularity-${VERSION}.tar.gz && \
-#     cd singularity
-# RUN ./mconfig && \
-#     make -C ./builddir && \
-#     make -C ./builddir install
-# # Or just install from yum...
-# RUN yum install -y epel-release && yum update -y && yum install -y singularity
+# Install JupyterLab + Slurm ext.
+RUN yum install sudo -y \
+    # && yum install python3.9 python3-pip -y \
+    && yum update -y \
+    && yum install nodejs -y \
+    && npm install -g configurable-http-proxy \
+    && python -m pip install jupyterlab
+WORKDIR /home/slurm
+EXPOSE 8888
+
+ENV USER slurm
+ENV SHELL bash
+
+RUN yum install openmpi-devel -y \
+    # && export CC=/usr/lib64/openmpi/bin/mpicc \
+    # && python -m pip install mpi4py \
+    && python -m pip install jupyterlab_slurm
+
 
 COPY slurm.conf /etc/slurm/slurm.conf
-COPY gres.conf /etc/slurm/gres.conf
+# COPY gres.conf /etc/slurm/gres.conf
 # COPY cgroup.conf /etc/slurm/cgroup.conf
-COPY slurmdbd.conf /etc/slurm/slurmdbd.conf
-RUN set -x \
-    && chown slurm:slurm /etc/slurm/slurmdbd.conf \
-    && chmod 600 /etc/slurm/slurmdbd.conf
+# COPY slurmdbd.conf /etc/slurm/slurmdbd.conf
+# RUN set -x \
+    # && chown slurm:slurm /etc/slurm/slurmdbd.conf \
+    # && chmod 600 /etc/slurm/slurmdbd.conf
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
-CMD ["slurmdbd"]
+CMD ["slurmjupyter"]

@@ -62,13 +62,12 @@ then
     nvidia-smi -i 0 -pm ENABLED || true
     # set -e
 
-    # echo "---> Starting the Slurm Node Daemon (slurmd) ..."
-    # exec /usr/sbin/slurmd -Dvvv
-    echo "---> Starting configless Slurm Node Daemon (slurmd) ..."
-    exec /usr/sbin/slurmd -Dvvv --conf-server slurmctld
+    echo "---> Starting the Slurm Node Daemon (slurmd) ..."
+    exec /usr/sbin/slurmd -Dvvv
 fi
 
-if ["$1" = "slurmjupyter"]
+if [ "$1" = "slurmjupyter" ]
+then
     echo "---> Starting the MUNGE Authentication service (munged) ..."
     gosu munge /usr/sbin/munged
 
@@ -84,8 +83,9 @@ if ["$1" = "slurmjupyter"]
     echo "---> Starting the Jupyter Lab ..."
     jupyter lab --no-browser --allow-root --ip=0.0.0.0 --NotebookApp.token='' --NotebookApp.password=''
 
-    tail -f /dev/null
-
+    exec tail -f /dev/null
 fi
+
+#  export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 exec "$@"
