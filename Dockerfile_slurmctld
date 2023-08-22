@@ -1,5 +1,43 @@
 FROM rockylinux:8
 
+# # Install basic tools for compiling
+# RUN yum groupinstall -y 'Development Tools'
+# # Ensure EPEL repository is available
+# RUN yum install -y epel-release
+# # Install RPM packages for dependencies
+# RUN yum install -y \
+#     libseccomp-devel \
+#     squashfs-tools \
+#     squashfuse \
+#     fuse-overlayfs \
+#     fakeroot \
+#     /usr/*bin/fuse2fs \
+#     cryptsetup \
+#     wget git
+# # Install GO
+# RUN export GOVERSION=1.19.6 OS=linux ARCH=amd64 \
+#     && wget -O /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz \
+#     https://dl.google.com/go/go${GOVERSION}.${OS}-${ARCH}.tar.gz \
+#     && tar -C /usr/local -xzf /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz
+# ENV PATH="$PATH:/usr/local/go/bin"
+# # Install Apptainer
+# ARG APPTAINER_COMMITISH="main"
+# ARG MCONFIG_OPTIONS="--with-suid"
+# WORKDIR $GOPATH/src/github.com/apptainer
+# RUN git clone https://github.com/apptainer/apptainer.git \
+#     && cd apptainer \
+#     && git checkout "$APPTAINER_COMMITISH" \
+#     && ./mconfig $MCONFIG_OPTIONS -p /usr/local/apptainer \
+#     && cd builddir \
+#     && make \
+#     && make install
+
+# ENV PATH="/usr/local/apptainer/bin:$PATH" \
+#     APPTAINER_TMPDIR="/tmp-apptainer"
+# RUN yum -y install ca-certificates libseccomp squashfs-tools \
+#     && mkdir -p $APPTAINER_TMPDIR \
+#     && rm -rf /tmp/*
+
 LABEL org.opencontainers.image.source="https://github.com/giovtorres/slurm-docker-cluster" \
       org.opencontainers.image.title="slurm-docker-cluster" \
       org.opencontainers.image.description="Slurm Docker cluster on Rocky Linux 8" \
@@ -83,7 +121,8 @@ RUN set -x \
         /var/lib/slurmd/qos_usage \
         /var/lib/slurmd/fed_mgr_state \
     && chown -R slurm:slurm /var/*/slurm* \
-    && /sbin/create-munge-key
+    && /sbin/create-munge-key \
+    && chown -R slurm:slurm /etc/munge/
 
 COPY slurm.conf /etc/slurm/slurm.conf
 COPY slurmdbd.conf /etc/slurm/slurmdbd.conf
@@ -91,11 +130,35 @@ RUN set -x \
     && chown slurm:slurm /etc/slurm/slurmdbd.conf \
     && chmod 600 /etc/slurm/slurmdbd.conf
 
-# ------- Install Singularity/Apptainer -------
-RUN yum install -y epel-release \
-    && yum install -y apptainer
-
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
-CMD ["slurmdbd"]
+## ------- Setup SSH ------
+RUN yum -y update && yum install  openssh-server initscripts sudo -y
+# Create a user “sshuser” and group “sshgroup”
+# RUN groupadd sshgroup && useradd -ms /bin/bash -g sshgroup sshuser
+# Create sshuser directory in home
+RUN mkdir -p /home/slurm/.ssh
+# Copy the ssh public key in the authorized_keys file. The idkey.pub below is a public key file you get from ssh-keygen. They are under ~/.ssh directory by default.
+COPY id_rsa.pub /home/slurm/.ssh/authorized_keys
+# Copy a Bashrc to jump to (shared) data folder! 
+COPY .bashrc .bash_profile /home/slurm/
+# change ownership of the key file. 
+RUN chown slurm:slurm /home/slurm/.ssh/authorized_keys && chmod 600 /home/slurm/.ssh/authorized_keys
+RUN chown slurm:slurm /home/slurm/.bashrc
+RUN chown slurm:slurm /home/slurm/.bash_profile
+RUN chown slurm:slurm /home/slurm
+# Start SSH service
+# RUN service ssh start
+# RUN /etc/init.d/sshd start
+RUN /usr/bin/ssh-keygen -A
+
+# ------- Install Singularity/Apptainer -------
+RUN yum install -y epel-release \
+    && yum install -y apptainer
+RUN yum install -y p7zip p7zip-plugins
+
+# Expose docker port 22 for SSH
+EXPOSE 22
+CMD ["/usr/sbin/sshd","-D"]
+# CMD ["slurmdbd"]

@@ -14,7 +14,7 @@ services:
       - var_lib_mysql:/var/lib/mysql
 
   slurmdbd:
-    image: slurm-docker-cluster:${IMAGE_TAG:-21.08}
+    image: slurm-docker-cluster:${IMAGE_TAG:-5GB}
     build:
       context: .
       args:
@@ -32,45 +32,58 @@ services:
       - mysql
 
   slurmctld:
-    image: slurm-docker-cluster:${IMAGE_TAG:-21.08}
+    # image: slurm-docker-cluster:${IMAGE_TAG:-21.08.6}
+    # Build this image from current folder
+    # Use a specific file: Dockerfile_slurmctld
+    build: 
+      context: ./
+      dockerfile: Dockerfile_slurmctld
     command: ["slurmctld"]
     container_name: slurmctld
+    privileged: true
     hostname: slurmctld
     volumes:
       - etc_munge:/etc/munge
       - etc_slurm:/etc/slurm
       - slurm_jobdir:/data
       - var_log_slurm:/var/log/slurm
+      - home_cache:/home/slurm
     expose:
       - "6817"
+    ports:
+      - "2222:22"
     depends_on:
       - "slurmdbd"
 
   c1:
-    image: slurm-docker-cluster:${IMAGE_TAG:-21.08}
+    image: slurm-docker-cluster:${IMAGE_TAG:-5GB}
     command: ["slurmd"]
     hostname: c1
+    privileged: true
     container_name: c1
     volumes:
       - etc_munge:/etc/munge
       - etc_slurm:/etc/slurm
       - slurm_jobdir:/data
       - var_log_slurm:/var/log/slurm
+      - home_cache:/home/slurm
     expose:
       - "6818"
     depends_on:
       - "slurmctld"
 
   c2:
-    image: slurm-docker-cluster:${IMAGE_TAG:-21.08}
+    image: slurm-docker-cluster:${IMAGE_TAG:-5GB}
     command: ["slurmd"]
     hostname: c2
+    privileged: true
     container_name: c2
     volumes:
       - etc_munge:/etc/munge
       - etc_slurm:/etc/slurm
       - slurm_jobdir:/data
       - var_log_slurm:/var/log/slurm
+      - home_cache:/home/slurm
     expose:
       - "6818"
     depends_on:
@@ -82,3 +95,4 @@ volumes:
   slurm_jobdir:
   var_lib_mysql:
   var_log_slurm:
+  home_cache:

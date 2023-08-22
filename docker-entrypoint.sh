@@ -26,6 +26,12 @@ then
     echo "---> Starting the MUNGE Authentication service (munged) ..."
     gosu munge /usr/sbin/munged
 
+    echo "---> Starting SSH Daemon (sshd) ..."
+    # exec /usr/bin/ssh-keygen -A
+    exec /usr/sbin/sshd -D &
+    exec rm /run/nologin &
+    exec chmod 777 /data &
+
     echo "---> Waiting for slurmdbd to become active before starting slurmctld ..."
 
     until 2>/dev/null >/dev/tcp/slurmdbd/6819
