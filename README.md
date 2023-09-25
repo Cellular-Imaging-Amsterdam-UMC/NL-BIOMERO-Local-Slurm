@@ -28,6 +28,35 @@ Now you can access Slurm through SSH:
 
 Done.
 
+For example, run:
+
+    sbatch -n 1 --wrap "hostname > lolcow.log && singularity run docker://godlovedc/lolcow >> lolcow.log"
+
+This should say "Submitted batch job 1"
+Then let's tail the logfile:
+
+    tail -f lolcow.log
+
+First we see the slurm node that is computing, and later we will see the funny cow.
+
+```bash
+[slurm@slurmctld data]$ tail -f lolcow.log
+c1
+ _______________________________________
+/ Must I hold a candle to my shames?    \
+|                                       |
+| -- William Shakespeare, "The Merchant |
+\ of Venice"                            /
+ ---------------------------------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+```
+
+Exit logs with `CTRL+C`, and the container with `exit`, and enjoy your local Slurm cluster.
+
 ## New Features
 
 We added the following features to this (forked) cluster:
