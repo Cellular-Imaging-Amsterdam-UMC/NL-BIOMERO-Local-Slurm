@@ -4,6 +4,80 @@ This is a multi-container Slurm cluster using docker-compose.  The compose file
 creates named volumes for persistent storage of MySQL data files as well as
 Slurm state and log directories.
 
+## Quickstart
+
+Clone this repository locally
+
+    git clone https://github.com/TorecLuik/slurm-docker-cluster
+
+Change into the new directory
+
+    cd slurm-docker-cluster
+
+Copy your public SSH key into this directory, to allow SSH access
+
+    cp ~/.ssh/id_rsa.pub .
+
+Build and run the Slurm cluster containers
+
+    docker-compose up -d --build
+
+Now you can access Slurm through SSH:
+
+    ssh -i ~/.ssh/id_rsa -p 2222 -o StrictHostKeyChecking=no slurm@host.docker.internal
+
+Done.
+
+## New Features
+
+We added the following features to this (forked) cluster:
+- Running SSH on the SlurmCTLD, you can connect to it at `host.docker.internal:2222`
+- Running Singularity, you can fire off any singularity container now, e.g.:
+
+    `sbatch -n 1 --wrap "hostname > lolcow.log && singularity run docker://godlovedc/lolcow >> lolcow.log"`
+
+This should give a funny cow in lolcow.log and the host farm on which the cow was grazing.
+
+Note: Like always be sure to run Slurm commands from `/data`, the shared folder/volume. Otherwise it won't be able to share the created logfile.
+
+
+
+
+
+
+We have not added:
+- GPU support
+
+## Docker specifics 
+
+To stop the cluster:
+
+    docker-compose down
+
+N.B. Data is stored on Docker volumes, which are not automatically deleted when you down the setup. Convenient.
+
+To remove volumes as well:
+
+    docker-compose down --volumes
+
+To rebuild a single container (while running your cluster):
+
+    docker-compose up -d --build <name>
+
+To attach to a running container:
+
+    docker-compose exec <name> /bin/bash
+
+Where `<name>` is e.g. `slurmctld` or `c1`
+
+Exit back to your commandline by typing `exit`.
+
+Or check the logs
+
+    docker-compose logs -f 
+
+Exit with CTRL+C (only exits the logs, does not shut down the container)
+
 ## Containers and Volumes
 
 The compose file will run the following containers:
@@ -22,37 +96,9 @@ The compose file will create the following named volumes:
 * var_lib_mysql     ( -> /var/lib/mysql )
 * var_log_slurm     ( -> /var/log/slurm )
 
-## Building the Docker Image
+## Slurm specifics
 
-Build the image locally:
-
-```console
-docker build -t slurm-docker-cluster:21.08.6 .
-```
-
-Build a different version of Slurm using Docker build args and the Slurm Git
-tag:
-
-```console
-docker build --build-arg SLURM_TAG="slurm-19-05-2-1" -t slurm-docker-cluster:19.05.2 .
-```
-
-Or equivalently using `docker-compose`:
-
-```console
-SLURM_TAG=slurm-19-05-2-1 IMAGE_TAG=19.05.2 docker-compose build
-```
-
-
-## Starting the Cluster
-
-Run `docker-compose` to instantiate the cluster:
-
-```console
-IMAGE_TAG=19.05.2 docker-compose up -d
-```
-
-## Register the Cluster with SlurmDBD
+### Register the Cluster with SlurmDBD
 
 To register the cluster to the slurmdbd daemon, run the `register_cluster.sh`
 script:
@@ -68,7 +114,7 @@ script:
 > You can check the status of the cluster by viewing the logs: `docker-compose
 > logs -f`
 
-## Accessing the Cluster
+### Accessing the Cluster
 
 Use `docker exec` to run a bash shell on the controller container:
 
@@ -84,7 +130,7 @@ PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
 normal*      up 5-00:00:00      2   idle c[1-2]
 ```
 
-## Submitting Jobs
+### Submitting Jobs
 
 The `slurm_jobdir` named volume is mounted on each Slurm container as `/data`.
 Therefore, in order to see job output files while on the controller, change to
@@ -96,21 +142,4 @@ the `/data` directory when on the **slurmctld** container and then submit a job:
 Submitted batch job 2
 [root@slurmctld data]# ls
 slurm-2.out
-```
-
-## Stopping and Restarting the Cluster
-
-```console
-docker-compose stop
-docker-compose start
-```
-
-## Deleting the Cluster
-
-To remove all containers and volumes, run:
-
-```console
-docker-compose stop
-docker-compose rm -f
-docker volume rm slurm-docker-cluster_etc_munge slurm-docker-cluster_etc_slurm slurm-docker-cluster_slurm_jobdir slurm-docker-cluster_var_lib_mysql slurm-docker-cluster_var_log_slurm
 ```
