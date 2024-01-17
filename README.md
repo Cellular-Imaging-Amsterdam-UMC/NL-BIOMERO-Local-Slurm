@@ -1,4 +1,4 @@
-# Slurm Docker Cluster
+# Local Slurm cluster (for BIOMERO)
 
 This is a multi-container Slurm cluster using docker-compose.  The compose file
 creates named volumes for persistent storage of MySQL data files as well as
@@ -8,11 +8,11 @@ Slurm state and log directories.
 
 Clone this repository locally
 
-    git clone https://github.com/TorecLuik/slurm-docker-cluster
+    git clone https://github.com/Cellular-Imaging-Amsterdam-UMC/NL-BIOMERO-Local-Slurm
 
 Change into the new directory
 
-    cd slurm-docker-cluster
+    cd NL-BIOMERO-Local-Slurm
 
 Copy your public SSH key into this directory, to allow SSH access
 
@@ -68,10 +68,6 @@ We added the following features to this (forked) cluster:
 This should give a funny cow in lolcow.log and the host farm on which the cow was grazing.
 
 Note: Like always be sure to run Slurm commands from `/data`, the shared folder/volume. Otherwise it won't be able to share the created logfile.
-
-
-
-
 
 
 We have not added:
