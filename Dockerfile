@@ -1,4 +1,4 @@
-FROM rockylinux:8
+FROM rockylinux:9.3
 
 LABEL org.opencontainers.image.source="https://github.com/TorecLuik/slurm-docker-cluster" \
       org.opencontainers.image.title="slurm-docker-cluster" \
@@ -10,11 +10,11 @@ ARG SLURM_TAG=slurm-21-08-6-1
 ARG GOSU_VERSION=1.11
 
 RUN set -ex \
-    && yum makecache \
-    && yum -y update \
-    && yum -y install dnf-plugins-core \
-    && yum config-manager --set-enabled powertools \
-    && yum -y install \
+    && dnf makecache \
+    && dnf -y update \
+    && dnf -y install dnf-plugins-core \
+    && dnf config-manager --set-enabled crb \
+    && dnf -y install \
        wget \
        bzip2 \
        perl \
@@ -35,10 +35,11 @@ RUN set -ex \
        vim-enhanced \
        http-parser-devel \
        json-c-devel \
-    && yum clean all \
-    && rm -rf /var/cache/yum
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
 
-RUN alternatives --set python /usr/bin/python3
+# RUN alternatives --set python /usr/bin/python3
+RUN alternatives --install /usr/bin/python python /usr/bin/python3.10 1
 
 RUN pip3 install Cython nose
 
