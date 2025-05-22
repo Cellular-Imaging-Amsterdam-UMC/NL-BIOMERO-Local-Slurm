@@ -22,11 +22,11 @@ Build and run the Slurm cluster containers
 
     docker-compose up -d --build
 
-Now you can access Slurm through SSH:
+Now you can access Slurm through SSH (from inside a Docker container):
 
     ssh -i ~/.ssh/id_rsa -p 2222 -o StrictHostKeyChecking=no slurm@host.docker.internal
 
-Or:
+Or (from your host Windows machine):
 
     ssh -i ~/.ssh/id_rsa -p 2222 -o StrictHostKeyChecking=no slurm@localhost
 
