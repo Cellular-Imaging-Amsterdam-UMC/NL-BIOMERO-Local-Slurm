@@ -26,6 +26,10 @@ Now you can access Slurm through SSH:
 
     ssh -i ~/.ssh/id_rsa -p 2222 -o StrictHostKeyChecking=no slurm@host.docker.internal
 
+Or:
+
+    ssh -i ~/.ssh/id_rsa -p 2222 -o StrictHostKeyChecking=no slurm@localhost
+
 Done.
 
 For example, run:
