@@ -25,7 +25,7 @@ services:
     expose:
       - "6819"
     depends_on:
-      - mysql2
+      - mysql
 
   slurmctld:
     image: cellularimagingcf/slurm-docker-cluster-slurmctld:latest
