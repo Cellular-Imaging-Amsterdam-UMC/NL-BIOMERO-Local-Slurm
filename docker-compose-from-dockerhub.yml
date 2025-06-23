@@ -4,7 +4,7 @@ services:
   mysql:
     image: mariadb:10.10
     hostname: mysql
-    container_name: mysql2
+    container_name: mysql
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
       MYSQL_DATABASE: slurm_acct_db
