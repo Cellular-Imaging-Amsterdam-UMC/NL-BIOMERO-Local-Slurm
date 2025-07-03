@@ -5,6 +5,7 @@ services:
     image: mariadb:10.10
     hostname: mysql
     container_name: mysql
+    privileged: true
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
       MYSQL_DATABASE: slurm_acct_db
@@ -18,6 +19,7 @@ services:
     command: ["slurmdbd"]
     container_name: slurmdbd
     hostname: slurmdbd
+    privileged: true
     volumes:
       - etc_munge:/etc/munge
       - etc_slurm:/etc/slurm
@@ -39,6 +41,7 @@ services:
       - slurm_jobdir:/data
       - var_log_slurm:/var/log/slurm
       - home_cache:/home/slurm
+      - ./id_rsa.pub:/home/slurm/.ssh/authorized_keys
     expose:
       - "6817"
     ports:
