@@ -32,6 +32,11 @@ Or (from your host Windows machine):
 
 Done.
 
+If the SSH is not working, it might be permission related since SSH is quite specific about that. 
+Try forcing ownership and access: 
+
+    docker exec -it slurmctld bash -c "chown -R slurm:slurm /home/slurm/.ssh && chmod 700 /home/slurm/.ssh && chmod 600 /home/slurm/.ssh/authorized_keys" 
+
 For example, run this command from the `/data` directory:
 
     sbatch -n 1 --wrap "hostname > lolcow.log && singularity run docker://godlovedc/lolcow >> lolcow.log"
