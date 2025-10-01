@@ -32,7 +32,7 @@ Or (from your host Windows machine):
 
 Done.
 
-For example, run:
+For example, run this command from the `/data` directory:
 
     sbatch -n 1 --wrap "hostname > lolcow.log && singularity run docker://godlovedc/lolcow >> lolcow.log"
 
